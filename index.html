@@ -4,99 +4,196 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WACC Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-            line-height: 1.6;
-            max-width: 800px;
-            margin: 0 auto;
+        .metric-card {
             padding: 20px;
-            color: #333;
-        }
-        .header {
-            text-align: center;
-            padding: 40px 0;
+            border-radius: 8px;
             background-color: #f8f9fa;
-            border-radius: 8px;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
         }
-        .button {
-            display: inline-block;
-            padding: 12px 24px;
-            background-color: #0366d6;
-            color: white;
-            text-decoration: none;
-            border-radius: 6px;
-            margin: 20px 0;
-            transition: background-color 0.3s;
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #0366d6;
         }
-        .button:hover {
-            background-color: #0056b3;
+        .metric-change {
+            font-size: 16px;
+            margin-top: 5px;
         }
-        .features {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin: 40px 0;
+        .positive-change {
+            color: #28a745;
         }
-        .feature-card {
-            padding: 20px;
-            background-color: #f8f9fa;
-            border-radius: 8px;
+        .negative-change {
+            color: #dc3545;
         }
-        img {
-            max-width: 100%;
-            height: auto;
-            border-radius: 8px;
-            margin: 20px 0;
+        .tab-content {
+            padding: 20px 0;
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>WACC Dashboard</h1>
-        <p>Interactive Weighted Average Cost of Capital Analysis Tool</p>
-        <a href="https://share.streamlit.io/smitchell-21/Waccdashboard/main/app.py" class="button">Launch Dashboard</a>
+    <div class="container-fluid py-4">
+        <h1 class="text-center mb-4">WACC Analysis Dashboard</h1>
+        
+        <!-- Current WACC Section -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="metric-card">
+                    <h3>Current WACC</h3>
+                    <div id="currentWacc" class="metric-value"></div>
+                    <div id="waccDate" class="text-muted"></div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="metric-card">
+                    <h3>Change from Previous</h3>
+                    <div id="waccChange" class="metric-value"></div>
+                    <div id="changePercent" class="metric-change"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <ul class="nav nav-tabs" id="dashboardTabs" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" id="overview-tab" data-bs-toggle="tab" href="#overview">Overview</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="analysis-tab" data-bs-toggle="tab" href="#analysis">Analysis</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="visualization-tab" data-bs-toggle="tab" href="#visualization">Visualization</a>
+            </li>
+        </ul>
+
+        <!-- Tab Content -->
+        <div class="tab-content">
+            <!-- Overview Tab -->
+            <div class="tab-pane fade show active" id="overview">
+                <div class="row">
+                    <div class="col-md-8">
+                        <div id="timeSeriesPlot"></div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="metric-card">
+                            <h3>Summary Statistics</h3>
+                            <table class="table" id="summaryStats">
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analysis Tab -->
+            <div class="tab-pane fade" id="analysis">
+                <div class="table-responsive">
+                    <table class="table" id="detailedData">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>WACC Value</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Visualization Tab -->
+            <div class="tab-pane fade" id="visualization">
+                <div id="yearlyComparisonPlot"></div>
+            </div>
+        </div>
     </div>
 
-    <h2>About the Dashboard</h2>
-    <p>
-        This interactive dashboard provides comprehensive analysis of Weighted Average Cost of Capital (WACC).
-        Built with Streamlit and Python, it offers real-time visualization and analysis capabilities.
-    </p>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Load the dashboard data
+        fetch('static/data/dashboard_data.json')
+            .then(response => response.json())
+            .then(data => {
+                // Update current WACC
+                document.getElementById('currentWacc').textContent = data.current_wacc.value.toFixed(4);
+                document.getElementById('waccDate').textContent = `As of ${data.current_wacc.date}`;
 
-    <div class="features">
-        <div class="feature-card">
-            <h3>📊 Real-time Monitoring</h3>
-            <p>Track current WACC values and historical trends with interactive charts</p>
-        </div>
-        <div class="feature-card">
-            <h3>📈 Historical Analysis</h3>
-            <p>View and analyze historical WACC data with detailed visualizations</p>
-        </div>
-        <div class="feature-card">
-            <h3>📑 Detailed Reports</h3>
-            <p>Access comprehensive statistics and downloadable reports</p>
-        </div>
-    </div>
+                // Calculate and display change
+                if (data.current_wacc.previous !== null) {
+                    const change = data.current_wacc.value - data.current_wacc.previous;
+                    const changeElement = document.getElementById('waccChange');
+                    const changePercentElement = document.getElementById('changePercent');
+                    
+                    changeElement.textContent = change.toFixed(4);
+                    changeElement.classList.add(change >= 0 ? 'positive-change' : 'negative-change');
+                    
+                    const percentChange = (change / data.current_wacc.previous) * 100;
+                    changePercentElement.textContent = `${percentChange.toFixed(2)}%`;
+                    changePercentElement.classList.add(change >= 0 ? 'positive-change' : 'negative-change');
+                }
 
-    <h2>Features</h2>
-    <ul>
-        <li>Current WACC value display with change indicators</li>
-        <li>Historical trend analysis</li>
-        <li>Summary statistics</li>
-        <li>Detailed data view with filtering capabilities</li>
-        <li>Data export functionality</li>
-    </ul>
+                // Create time series plot
+                const trace = {
+                    x: data.wacc_values.dates,
+                    y: data.wacc_values.values,
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    name: 'WACC'
+                };
 
-    <h2>Getting Started</h2>
-    <p>
-        Click the "Launch Dashboard" button above to access the interactive dashboard.
-        The dashboard is hosted on Streamlit Cloud and is regularly updated with the latest data.
-    </p>
+                const layout = {
+                    title: 'WACC Time Series Overview',
+                    xaxis: { title: 'Date' },
+                    yaxis: { title: 'WACC' },
+                    plot_bgcolor: 'white',
+                    paper_bgcolor: 'white'
+                };
 
-    <footer style="text-align: center; margin-top: 40px; padding: 20px; border-top: 1px solid #eee;">
-        <p>Created by smitchell-21 | <a href="https://github.com/smitchell-21/Waccdashboard">View on GitHub</a></p>
-    </footer>
+                Plotly.newPlot('timeSeriesPlot', [trace], layout);
+
+                // Update summary statistics
+                const statsTable = document.getElementById('summaryStats').getElementsByTagName('tbody')[0];
+                const stats = [
+                    ['Minimum', data.summary_stats.minimum],
+                    ['Maximum', data.summary_stats.maximum],
+                    ['Average', data.summary_stats.average],
+                    ['Std Dev', data.summary_stats.std_dev]
+                ];
+
+                stats.forEach(([label, value]) => {
+                    const row = statsTable.insertRow();
+                    row.insertCell(0).textContent = label;
+                    row.insertCell(1).textContent = value.toFixed(4);
+                });
+
+                // Create yearly comparison plot
+                const yearlyTrace = {
+                    x: data.yearly_data.years,
+                    y: data.yearly_data.averages,
+                    type: 'bar',
+                    name: 'Yearly Average'
+                };
+
+                const yearlyLayout = {
+                    title: 'WACC Yearly Comparison',
+                    xaxis: { title: 'Year' },
+                    yaxis: { title: 'Average WACC' },
+                    plot_bgcolor: 'white',
+                    paper_bgcolor: 'white'
+                };
+
+                Plotly.newPlot('yearlyComparisonPlot', [yearlyTrace], yearlyLayout);
+
+                // Populate detailed data table
+                const detailedTable = document.getElementById('detailedData').getElementsByTagName('tbody')[0];
+                data.wacc_values.dates.forEach((date, index) => {
+                    const row = detailedTable.insertRow();
+                    row.insertCell(0).textContent = date;
+                    row.insertCell(1).textContent = data.wacc_values.values[index].toFixed(4);
+                });
+            })
+            .catch(error => console.error('Error loading dashboard data:', error));
+    </script>
 </body>
 </html>
